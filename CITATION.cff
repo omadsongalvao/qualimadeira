@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "QualiMadeira: a web application for wood quality assessment based on ABNT and ASTM standards"
+version: 1.1.0
+date-released: 2026-11-11
+license: MIT
+authors:
+  - family-names: "Galvão"
+    given-names: "Madson Lucas"
+    affiliation: "Universidade Federal do Pará (UFPA), Bragança, Brazil"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+repository-code: "https://github.com/omadsongalvao/qualimadeira"
+keywords:
+  - wood technology
+  - wood properties
+  - NBR 7190
+  - ASTM D143
+  - strength classes

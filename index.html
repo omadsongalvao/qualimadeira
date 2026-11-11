@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QualiMadeira — Qualidade da Madeira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f6f4ef; --card:#ffffff; --ink:#1f2a24; --muted:#5f6b63; --line:#e3ded3;
+  --green:#2f5d46; --green2:#3f7a5c; --greenbg:#e7f0ea; --amber:#a86a12; --amberbg:#fbf1df;
+  --red:#a33a2c; --redbg:#f9e6e3; --wood:#8a5a32; --woodbg:#f3eadf;
+  --radius:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#141815; --card:#1c221e; --ink:#e7ece8; --muted:#9aa7a0; --line:#2d3530;
+    --green:#7cc29b; --green2:#5fa580; --greenbg:#1f3328; --amber:#e3a94f; --amberbg:#3a2d18;
+    --red:#ec8a7c; --redbg:#3d211d; --wood:#d2a47a; --woodbg:#33281e; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.45}
+header{padding:20px 16px 8px;max-width:1100px;margin:0 auto}
+h1{font-family:"Source Serif 4",Georgia,serif;font-size:1.7rem;margin:0;color:var(--green)}
+h1 span{color:var(--wood)}
+.sub{color:var(--muted);margin:4px 0 0;font-size:.92rem}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:4px;overflow-x:auto;max-width:1100px;margin:0 auto;padding:8px 12px;scrollbar-width:none}
+.tabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px;border-radius:999px;font:600 .9rem Inter,sans-serif;cursor:pointer}
+.tabs button.on{background:var(--green);border-color:var(--green);color:#fff}
+@media (prefers-color-scheme: dark){.tabs button.on{color:#10170f}}
+main{max-width:1100px;margin:0 auto;padding:14px 12px 60px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.card h2{font-size:1.1rem;margin:0 0 4px}
+.card h3{font-size:.95rem;margin:14px 0 6px;color:var(--wood)}
+.muted{color:var(--muted);font-size:.88rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:8px 12px;font:600 .85rem Inter;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--greenbg);color:var(--green)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:.8rem;color:var(--muted)}
+label.f b{color:var(--ink);font-weight:600}
+input[type=text],input[type=number],select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:500 .95rem Inter}
+input:focus,select:focus{outline:2px solid var(--green2);outline-offset:0}
+.btn{border:1px solid var(--green);background:var(--green);color:#fff;padding:9px 14px;border-radius:9px;font:600 .88rem Inter;cursor:pointer}
+@media (prefers-color-scheme: dark){.btn{color:#10170f}}
+.btn.ghost{background:transparent;color:var(--green)}
+.btn.danger{background:transparent;color:var(--red);border-color:var(--red)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+fieldset{border:1px dashed var(--line);border-radius:10px;padding:10px 12px 12px;margin:10px 0}
+legend{font-weight:600;font-size:.85rem;color:var(--wood);padding:0 6px}
+.res{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:10px}
+.kpi{background:var(--greenbg);border-radius:10px;padding:10px}
+.kpi .v{font-size:1.25rem;font-weight:700;color:var(--green)}
+.kpi .l{font-size:.78rem;color:var(--muted)}
+.kpi .r{font-size:.7rem;color:var(--muted);margin-top:2px}
+.warn{background:var(--amberbg);color:var(--amber);border-radius:8px;padding:8px 10px;font-size:.85rem;margin-top:8px}
+.err{background:var(--redbg);color:var(--red);border-radius:8px;padding:8px 10px;font-size:.85rem;margin-top:8px}
+.ok{background:var(--greenbg);color:var(--green);border-radius:8px;padding:8px 10px;font-size:.85rem;margin-top:8px}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin-top:8px}
+table{border-collapse:collapse;width:100%;font-size:.82rem;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{background:var(--woodbg);color:var(--ink);font-weight:600;position:sticky;top:0}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+td.flag{color:var(--amber);font-weight:600}
+tr.bad td{background:var(--redbg)}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted);cursor:pointer}
+.drop.hover{border-color:var(--green);background:var(--greenbg)}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.78rem;font-weight:600;margin:2px 4px 2px 0}
+.b-g{background:var(--greenbg);color:var(--green)} .b-a{background:var(--amberbg);color:var(--amber)} .b-r{background:var(--redbg);color:var(--red)} .b-w{background:var(--woodbg);color:var(--wood)}
+.sp{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.sp h3{margin-top:0;font-size:1.05rem;color:var(--ink);font-style:italic}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.qitem{border:1px solid var(--line);border-radius:10px;padding:10px}
+.qitem .t{font-size:.78rem;color:var(--muted)}
+.qitem .v{font-weight:700;font-size:1.05rem}
+.bar{height:8px;background:var(--line);border-radius:5px;margin-top:6px;position:relative;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--green2);border-radius:5px}
+code{background:var(--woodbg);padding:1px 5px;border-radius:4px;font-size:.82rem}
+.formula{font-family:"Source Serif 4",Georgia,serif;font-size:.95rem;background:var(--bg);border-left:3px solid var(--wood);padding:6px 10px;margin:6px 0;border-radius:0 6px 6px 0}
+.hide{display:none!important}
+details summary{cursor:pointer;font-weight:600;color:var(--green);margin:6px 0}
+footer{max-width:1100px;margin:0 auto;padding:0 16px 30px;color:var(--muted);font-size:.8rem}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.88rem;opacity:0;transition:.25s;pointer-events:none;z-index:20;max-width:90vw}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <div class="row" style="justify-content:space-between;align-items:flex-start">
+    <h1>Quali<span>Madeira</span></h1>
+    <div class="seg" id="langSeg" aria-label="Idioma / Language"><button data-l="pt">PT-BR</button><button data-l="en">EN-US</button></div>
+  </div>
+  <p class="sub" data-i="subtitle"></p>
+</header>
+<nav><div class="tabs" id="tabs">
+  <button data-t="fis" data-i="tab_fis"></button>
+  <button data-t="qui" data-i="tab_qui"></button>
+  <button data-t="mec" data-i="tab_mec"></button>
+  <button data-t="qual" data-i="tab_qual"></button>
+  <button data-t="sobre" data-i="tab_sobre"></button>
+</div></nav>
+<main>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div class="row">
+        <span class="muted" data-i="norm_label"></span>
+        <div class="seg" id="normSeg"><button data-n="ABNT">ABNT</button><button data-n="ASTM">ASTM</button></div>
+      </div>
+      <div class="row">
+        <button class="btn ghost" id="btnTemplate" data-i="btn_template"></button>
+        <button class="btn ghost" id="btnExample" data-i="btn_example"></button>
+      </div>
+    </div>
+    <div class="muted" id="normNote" style="margin-top:6px"></div>
+  </div>
+  <section id="view-fis"></section>
+  <section id="view-qui" class="hide"></section>
+  <section id="view-mec" class="hide"></section>
+  <section id="view-qual" class="hide"></section>
+  <section id="view-sobre" class="hide"></section>
+</main>
+<footer data-i="footer"></footer>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== idioma / language ===================== */
+const S = {
+  subtitle:['Cálculo de propriedades físicas, químicas e mecânicas da madeira segundo ABNT e ASTM, com estatística por espécie e visão prévia da qualidade.','Physical, chemical and mechanical wood properties computed under ABNT and ASTM standards, with statistics by species and a quality overview.'],
+  tab_fis:['Físicas','Physical'], tab_qui:['Químicas','Chemical'], tab_mec:['Mecânicas','Mechanical'], tab_qual:['Qualidade','Quality'], tab_sobre:['Normas e fórmulas','Standards & formulas'],
+  norm_label:['Norma de referência:','Reference standard:'],
+  btn_template:['Baixar modelo Excel','Download Excel template'], btn_example:['Carregar exemplo','Load example'],
+  footer:['QualiMadeira v1.1 · Os resultados são indicativos e não substituem o laudo técnico. Confira sempre a versão vigente das normas.','QualiMadeira v1.1 · Results are indicative and do not replace a technical report. Always check the current edition of each standard.'],
+  mode_cp:['Corpo de prova','Specimen'], mode_xl:['Planilha Excel','Excel sheet'],
+  corr12:['Corrigir resistência e rigidez para 12% de umidade (ABNT NBR 7190)','Correct strength and stiffness to 12% moisture content (ABNT NBR 7190)'],
+  ident:['Identificação','Identification'],
+  calc:['Calcular e adicionar','Calculate and add'], clearform:['Limpar campos','Clear fields'],
+  xl_help:['Use o <b>modelo Excel</b> (aba <code>{sheet}</code>). A primeira linha deve conter os nomes de coluna abaixo (em português ou inglês); uma linha por corpo de prova. Use ponto ou vírgula como decimal. Colunas vazias são ignoradas.','Use the <b>Excel template</b> (sheet <code>{sheet}</code>). Row 1 must hold the column names below (Portuguese or English); one row per specimen. Decimal point or comma are both accepted. Empty columns are ignored.'],
+  drop:['Toque para escolher ou arraste um arquivo <b>.xlsx</b>, <b>.xls</b> ou <b>.csv</b>','Tap to choose or drop an <b>.xlsx</b>, <b>.xls</b> or <b>.csv</b> file'],
+  cols_expected:['Colunas esperadas','Expected columns'], col:['Coluna','Column'], desc:['Descrição','Description'], unit:['Unidade','Unit'], required:['* obrigatória','* required'],
+  results:['Resultados','Results'], export:['Exportar resultados (.xlsx)','Export results (.xlsx)'], cleardata:['Apagar dados','Clear data'],
+  stats_title:['Estatística por espécie','Statistics by species'],
+  empty:['Nenhum corpo de prova ainda. Insira dados manualmente, importe uma planilha ou toque em “Carregar exemplo”.','No specimens yet. Enter data manually, import a spreadsheet or tap “Load example”.'],
+  species:['Espécie','Species'], cp:['CP','Specimen'], alerts:['Alertas','Warnings'], property:['Propriedade','Property'],
+  mean:['Média','Mean'], sd:['DP','SD'], cv:['CV (%)','CV (%)'], min:['Mín','Min'], max:['Máx','Max'], charval:['Valor característico','Characteristic value'],
+  cv_note:['CV acima de 30% destacado.','CV above 30% highlighted.'],
+  fk_note:['Valor característico pelo estimador da NBR 7190 (n ≥ 6; recomenda-se n ≥ 12 para caracterização completa).','Characteristic value by the NBR 7190 estimator (n ≥ 6; n ≥ 12 recommended for full characterization).'],
+  need_species:['Informe a espécie.','Enter the species.'],
+  insufficient:['Dados insuficientes para calcular qualquer propriedade deste módulo.','Not enough data to compute any property in this module.'],
+  added:['CP {cp} de <i>{sp}</i> adicionado aos resultados.','Specimen {cp} of <i>{sp}</i> added to results.'],
+  at12:['a 12% U · na umidade do ensaio: {v}','at 12% MC · at test moisture: {v}'],
+  confirm_clear:['Toque novamente em "Apagar dados" para confirmar','Tap "Clear data" again to confirm'], cleared:['Dados apagados','Data cleared'],
+  no_export:['Não há resultados para exportar','No results to export'],
+  xl_nolib:['Biblioteca de leitura de Excel não carregou. Verifique a conexão e recarregue a página.','The Excel library did not load. Check your connection and reload the page.'],
+  xl_wrongsheet:['A planilha não tem a aba <code>{sheet}</code>. Ela parece ser do módulo “{mod}” — use a aba correspondente.','The workbook has no <code>{sheet}</code> sheet. It looks like the “{mod}” module — use that tab.'],
+  xl_norows:['A aba “{sh}” não tem linhas de dados.','Sheet “{sh}” has no data rows.'],
+  xl_nospecies:['Coluna obrigatória <code>Especie</code> / <code>Species</code> não encontrada na primeira linha da aba “{sh}”. Confira o modelo.','Required column <code>Species</code> / <code>Especie</code> not found in row 1 of sheet “{sh}”. Check the template.'],
+  xl_nomeas:['Nenhuma coluna de medição reconhecida. Os nomes devem seguir o modelo (ex.: <code>{ex}</code>).','No measurement column recognized. Names must follow the template (e.g. <code>{ex}</code>).'],
+  xl_ok:['{n} corpo(s) de prova importado(s) da aba “{sh}”.','{n} specimen(s) imported from sheet “{sh}”.'],
+  xl_skipped:[' {n} linha(s) sem espécie ignorada(s).',' {n} row(s) without species skipped.'],
+  xl_unknown:['Colunas não reconhecidas e ignoradas:','Unrecognized columns ignored:'],
+  xl_err:['Não foi possível ler o arquivo:','Could not read the file:'],
+  saved:['Arquivo salvo','File saved'], dl_cancel:['Download cancelado','Download cancelled'],
+  dl_fallback:['Se o download não iniciar, abra o app no navegador do computador','If the download does not start, open the app in a desktop browser'],
+  dl_none:['Download indisponível nesta visualização','Download unavailable in this view'], xl_unavail:['Biblioteca Excel indisponível','Excel library unavailable'],
+  example_loaded:['Dados ilustrativos (fictícios) carregados nas três abas','Illustrative (fictitious) data loaded in all three tabs'],
+  q_title:['Visão prévia da qualidade','Quality overview'],
+  q_empty:['Insira dados em pelo menos uma das abas (Físicas, Químicas ou Mecânicas) para ver a classificação por espécie.','Enter data in at least one tab (Physical, Chemical or Mechanical) to see the classification by species.'],
+  q_intro:['Síntese automática por espécie, combinando as três abas pelo nome da espécie. Classificações indicativas, para triagem — não substituem caracterização completa nem laudo técnico.','Automatic summary by species, joining the three tabs by species name. Classifications are indicative screening aids and do not replace full characterization or a technical report.'],
+  q_class:['Classe','Class'], q_db:['Densidade básica (média)','Basic density (mean)'], q_dap:['Densidade aparente 12%','Apparent density at 12%'],
+  q_ca:['Coef. de anisotropia','Anisotropy coefficient'], q_ev:['Retração volumétrica','Volumetric shrinkage'],
+  q_sc:['Classe de resistência (NBR 7190-1:2022)','Strength class (NBR 7190-1:2022)'], q_mor:['MOR médio','Mean MOR'], q_moe:['MOE médio','Mean MOE'],
+  q_janka:['Dureza Janka normal','Janka hardness, normal'], q_ext:['Extrativos totais','Total extractives'], q_lig:['Lignina total','Total lignin'], q_cz:['Cinzas','Ash'], q_holo:['Holocelulose (dif.)','Holocellulose (diff.)'],
+  q_uses:['Usos potenciais (indicativo)','Potential uses (indicative)'],
+  sc_noverif:['sem verificação de {x}','{x} not checked'], sc_all:['fc0,k, fv0,k e Ec0,m verificados','fc0,k, fv0,k and Ec0,m checked'], sc_below:['abaixo da menor classe para folhosas','below the lowest hardwood class'],
+  ec_meas:['Ec0 de compressão','Ec0 from compression'], ec_est:['Ec0 estimado como MOE/0,90 (relação usual para folhosas)','Ec0 estimated as MOE/0.90 (usual hardwood ratio)'],
+  no12:['sem correção a 12%','not corrected to 12%'], and:['e','and'],
+  dens_light:['Leve (baixa densidade)','Light (low density)'], dens_med:['Média densidade','Medium density'], dens_heavy:['Pesada (alta densidade)','Heavy (high density)'],
+  ca_exc:['Excelente estabilidade dimensional','Excellent dimensional stability'], ca_norm:['Estabilidade normal','Normal stability'], ca_bad:['Baixa estabilidade (alta anisotropia)','Low stability (high anisotropy)'],
+  ev_low:['Retração volumétrica baixa','Low volumetric shrinkage'], ev_med:['Retração volumétrica média','Medium volumetric shrinkage'], ev_high:['Retração volumétrica alta','High volumetric shrinkage'],
+  b_ext:['Teor de extrativos elevado','High extractive content'], b_ash:['Teor de cinzas elevado','High ash content'],
+  u_struct:['Estruturas de madeira (vigas, caibros, pontes, cobertura) — resistência compatível com classe {c}','Timber structures (beams, rafters, bridges, roofs) — strength consistent with class {c}'],
+  u_light:['Estruturas leves e construção civil temporária (classe {c})','Light structures and temporary construction (class {c})'],
+  u_floor:['Pisos, dormentes, cabos de ferramentas e usos que exigem alta densidade e resistência ao desgaste','Flooring, railway sleepers, tool handles and uses needing high density and wear resistance'],
+  u_furn:['Móveis, esquadrias e marcenaria (boa estabilidade dimensional)','Furniture, window and door frames, joinery (good dimensional stability)'],
+  u_dry:['Atenção à secagem: alta anisotropia aumenta o risco de empenamentos e rachaduras — preferir peças radiais ou usos sem exigência dimensional','Careful drying needed: high anisotropy raises the risk of warping and checking — prefer quarter-sawn pieces or uses without dimensional demands'],
+  u_panel:['Painéis (compensado, laminados), embalagens, forros e caixotaria','Panels (plywood, veneer), packaging, ceiling boards and crates'],
+  u_energy:['Energia: lenha e carvão vegetal (densidade e lignina favorecem rendimento e poder calorífico)','Energy: firewood and charcoal (density and lignin favour yield and heating value)'],
+  u_pulp:['Polpa celulósica (baixa lignina e extrativos)','Pulp (low lignin and extractives)'],
+  u_extr:['Extrativos elevados: possível maior durabilidade natural, mas podem dificultar colagem, acabamento e polpação','High extractives: possibly higher natural durability, but may hinder gluing, finishing and pulping'],
+  u_ash:['Cinzas elevadas: atenção para uso energético (incrustação) e desgaste de ferramentas de corte','High ash: watch for fouling in energy use and for tool wear'],
+  norm_ABNT:['ABNT: NBR 7190-3:2022 (CP isentos de defeitos, madeiras nativas) e NBR 11941 para densidade básica; resistências corrigidas para 12% de umidade. Padrão: flexão 50×50×1150 mm, vão 1050 mm (21h).','ABNT: NBR 7190-3:2022 (clear specimens, native woods) and NBR 11941 for basic density; strengths corrected to 12% moisture. Default: bending 50×50×1150 mm, span 1050 mm (21h).'],
+  norm_ASTM:['ASTM: D143 (método primário, CP 50×50×760 mm, vão 710 mm), D2395 (densidade), D1105/D1106/D1102 (química). Valores relatados na umidade de ensaio, sem correção automática.','ASTM: D143 (primary method, 50×50×760 mm specimen, 710 mm span), D2395 (density), D1105/D1106/D1102 (chemistry). Values reported at test moisture, not adjusted.'],
+  sheet_instr:['Instrucoes','Instructions'], sheet_dict:['Dicionario','Dictionary'],
+  sheet_res:['Resultados','Results'], sheet_stats:['Estatistica','Statistics']
+};
+let LANG = 'pt';
+try { LANG = localStorage.getItem('qm_lang') || ((navigator.language||'').toLowerCase().startsWith('pt') ? 'pt' : 'en'); } catch(e){}
+const EN = () => LANG === 'en';
+function t(key, vars){ const e = S[key]; let s = e ? e[EN()?1:0] : key; if (vars) for (const [k,v] of Object.entries(vars)) s = s.split('{'+k+'}').join(v); return s; }
+const tw = (pt, en) => EN() ? en : pt;
+const L = o => (o && typeof o === 'object' && 'pt' in o) ? o[LANG] : o;
+
+/* ===================== utilidades ===================== */
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+function num(v){
+  if (v === null || v === undefined || v === '') return NaN;
+  if (typeof v === 'number') return v;
+  let s = String(v).trim().replace(/\s/g,'');
+  if (s === '') return NaN;
+  const c = s.lastIndexOf(','), d = s.lastIndexOf('.');
+  if (c > -1 && d > -1) s = c > d ? s.replace(/\./g,'').replace(',', '.') : s.replace(/,/g,'');
+  else if (c > -1) s = s.replace(',', '.');
+  const x = Number(s);
+  return isFinite(x) ? x : NaN;
+}
+const ok = x => typeof x === 'number' && isFinite(x);
+function fmt(x, d=2){ return ok(x) ? x.toLocaleString(EN()?'en-US':'pt-BR',{minimumFractionDigits:d, maximumFractionDigits:d}) : '—'; }
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){ const el=$('#toast'); el.textContent=msg; el.classList.add('on'); clearTimeout(el._h); el._h=setTimeout(()=>el.classList.remove('on'), 3200); }
+function normKey(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+function mean(a){ a=a.filter(ok); return a.length ? a.reduce((s,x)=>s+x,0)/a.length : NaN; }
+function sd(a){ a=a.filter(ok); if (a.length<2) return NaN; const m=mean(a); return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1)); }
+
+/* Valor característico — estimador da ABNT NBR 7190 */
+function charValue(vals){
+  const v = vals.filter(ok).sort((a,b)=>a-b);
+  const n = v.length; const m = mean(v);
+  if (n < 2) return {val:NaN, met:tw('n insuficiente','n too small')};
+  if (n < 6) return {val:0.7*m, met:tw('0,70·fm (n < 6)','0.70·fm (n < 6)')};
+  const nn = n % 2 ? n-1 : n; const k = nn/2;
+  let s = 0; for (let i=0;i<k-1;i++) s += v[i];
+  let est = (2*s/(k-1) - v[k-1]) * 1.1;
+  let met = tw('estimador NBR 7190','NBR 7190 estimator');
+  if (est < v[0]) { est = v[0]; met += tw(' (limitado a f1)',' (bounded by f1)'); }
+  if (est < 0.7*m) { est = 0.7*m; met += tw(' (limitado a 0,70·fm)',' (bounded by 0.70·fm)'); }
+  return {val:est, met};
+}
+
+/* ===================== estado ===================== */
+const state = { norm:'ABNT', tab:'fis', mode:{fis:'cp',qui:'cp',mec:'cp'}, data:{fis:[],qui:[],mec:[]}, correct12:true };
+try { const s = JSON.parse(localStorage.getItem('qm_state')||'null'); if (s && s.data) { state.data = s.data; state.norm = s.norm||'ABNT'; state.correct12 = s.correct12 !== false; } } catch(e){}
+function save(){ try { localStorage.setItem('qm_state', JSON.stringify({data:state.data, norm:state.norm, correct12:state.correct12})); } catch(e){} }
+
+/* ===================== definição dos módulos ===================== */
+// F(chave PT, chave EN, rótulo PT, rótulo EN, unidade, opções)
+const F = (k, ke, pt, en, u='', o={}) => ({k, ke, l:{pt, en}, u, ...o});
+const ID_FIELDS = [ F('Especie','Species','Espécie','Species','',{type:'text', req:true}), F('CP','Specimen','Corpo de prova (ID)','Specimen ID','',{type:'text'}) ];
+
+const MOD = {
+ fis: {
+  title:{pt:'Propriedades físicas', en:'Physical properties'}, sheet:{pt:'Fisicas', en:'Physical'},
+  groups:[
+   {name:{pt:'Massa e volume', en:'Mass and volume'}, fields:[
+     F('Massa_inicial_g','Initial_mass_g','Massa inicial (úmida)','Initial (green) mass','g',{hint:{pt:'Massa no momento da coleta/ensaio',en:'Mass at sampling/test'}}),
+     F('Massa_seca_g','Dry_mass_g','Massa seca (0% U)','Oven-dry mass (0% MC)','g',{req:true, hint:{pt:'Seca em estufa a 103 ± 2 °C',en:'Oven-dried at 103 ± 2 °C'}}),
+     F('Volume_saturado_cm3','Saturated_volume_cm3','Volume saturado','Saturated (green) volume','cm³',{hint:{pt:'Para densidade básica',en:'For basic density'}}),
+     F('Volume_seco_cm3','Dry_volume_cm3','Volume seco (0% U)','Oven-dry volume (0% MC)','cm³',{hint:{pt:'Densidade anidra e retração volumétrica',en:'Oven-dry density and volumetric shrinkage'}}),
+     F('Massa_12_g','Mass_12_g','Massa a 12% U','Mass at 12% MC','g',{hint:{pt:'Opcional — densidade aparente',en:'Optional — apparent density'}}),
+     F('Volume_12_cm3','Volume_12_cm3','Volume a 12% U','Volume at 12% MC','cm³',{hint:{pt:'Opcional — densidade aparente',en:'Optional — apparent density'}})
+   ]},
+   {name:{pt:'Dimensões para retratibilidade (saturado → seco)', en:'Dimensions for shrinkage (green → oven-dry)'}, fields:[
+     F('Radial_sat_mm','Radial_green_mm','Radial saturada','Radial, green','mm'), F('Radial_seca_mm','Radial_dry_mm','Radial seca','Radial, oven-dry','mm'),
+     F('Tang_sat_mm','Tang_green_mm','Tangencial saturada','Tangential, green','mm'), F('Tang_seca_mm','Tang_dry_mm','Tangencial seca','Tangential, oven-dry','mm'),
+     F('Long_sat_mm','Long_green_mm','Longitudinal saturada','Longitudinal, green','mm'), F('Long_seca_mm','Long_dry_mm','Longitudinal seca','Longitudinal, oven-dry','mm')
+   ]}
+  ],
+  out:[
+   {k:'U', l:{pt:'Teor de umidade inicial',en:'Initial moisture content'}, u:'%', d:1},
+   {k:'Db', l:{pt:'Densidade básica',en:'Basic density'}, u:'g/cm³', d:3},
+   {k:'Dap12', l:{pt:'Densidade aparente (12%)',en:'Apparent density (12%)'}, u:'g/cm³', d:3},
+   {k:'Dan', l:{pt:'Densidade anidra',en:'Oven-dry density'}, u:'g/cm³', d:3},
+   {k:'eR', l:{pt:'Retração radial',en:'Radial shrinkage'}, u:'%', d:2},
+   {k:'eT', l:{pt:'Retração tangencial',en:'Tangential shrinkage'}, u:'%', d:2},
+   {k:'eL', l:{pt:'Retração longitudinal',en:'Longitudinal shrinkage'}, u:'%', d:2},
+   {k:'eV', l:{pt:'Retração volumétrica',en:'Volumetric shrinkage'}, u:'%', d:2},
+   {k:'CA', l:{pt:'Coeficiente de anisotropia (T/R)',en:'Anisotropy coefficient (T/R)'}, u:'', d:2}
+  ],
+  compute(r){
+    const o = {}, w = [];
+    const Mi=num(r.Massa_inicial_g), Ms=num(r.Massa_seca_g), Vsat=num(r.Volume_saturado_cm3), Vs=num(r.Volume_seco_cm3),
+          M12=num(r.Massa_12_g), V12=num(r.Volume_12_cm3);
+    if (ok(Mi)&&ok(Ms)&&Ms>0) { o.U = (Mi-Ms)/Ms*100; if (Mi<Ms) w.push(tw('Massa inicial menor que a massa seca','Initial mass lower than oven-dry mass')); }
+    if (ok(Ms)&&ok(Vsat)&&Vsat>0) o.Db = Ms/Vsat;
+    if (ok(M12)&&ok(V12)&&V12>0) o.Dap12 = M12/V12;
+    if (ok(Ms)&&ok(Vs)&&Vs>0) o.Dan = Ms/Vs;
+    const sh = (a,b) => (ok(a)&&ok(b)&&a>0) ? (a-b)/a*100 : NaN;
+    o.eR = sh(num(r.Radial_sat_mm), num(r.Radial_seca_mm));
+    o.eT = sh(num(r.Tang_sat_mm), num(r.Tang_seca_mm));
+    o.eL = sh(num(r.Long_sat_mm), num(r.Long_seca_mm));
+    if (ok(Vsat)&&ok(Vs)&&Vsat>0) o.eV = (Vsat-Vs)/Vsat*100;
+    else if (ok(o.eR)&&ok(o.eT)) { const Lg = ok(o.eL)?o.eL:0; o.eV = (1-(1-o.eR/100)*(1-o.eT/100)*(1-Lg/100))*100; }
+    if (ok(o.eR)&&ok(o.eT)&&o.eR>0) o.CA = o.eT/o.eR;
+    if (ok(o.Db)&&(o.Db<0.1||o.Db>1.4)) w.push(tw(`Densidade básica fora da faixa plausível (0,10–1,40 g/cm³): ${fmt(o.Db,3)}`,`Basic density outside plausible range (0.10–1.40 g/cm³): ${fmt(o.Db,3)}`));
+    if (ok(o.Dan)&&ok(o.Db)&&o.Dan<o.Db) w.push(tw('Densidade anidra menor que a básica (verifique volumes)','Oven-dry density lower than basic density (check volumes)'));
+    if (ok(o.Dap12)&&(o.Dap12<0.1||o.Dap12>1.5)) w.push(tw('Densidade aparente fora da faixa plausível','Apparent density outside plausible range'));
+    for (const [k,lim,np,ne] of [['eR',12,'radial','Radial'],['eT',18,'tangencial','Tangential'],['eL',2,'longitudinal','Longitudinal'],['eV',28,'volumétrica','Volumetric']])
+      if (ok(o[k])&&(o[k]<0||o[k]>lim)) w.push(tw(`Retração ${np} atípica: ${fmt(o[k],2)}% (esperado 0–${lim}%)`,`${ne} shrinkage atypical: ${fmt(o[k],2)}% (expected 0–${lim}%)`));
+    if (ok(o.CA)&&(o.CA<1||o.CA>4)) w.push(tw(`Coeficiente de anisotropia atípico: ${fmt(o.CA,2)} (esperado 1–4; retração radial maior que a tangencial?)`,`Atypical anisotropy coefficient: ${fmt(o.CA,2)} (expected 1–4; radial larger than tangential?)`));
+    if (ok(o.U)&&o.U>300) w.push(tw('Teor de umidade acima de 300%','Moisture content above 300%'));
+    return {o, w};
+  }
+ },
+ qui: {
+  title:{pt:'Propriedades químicas', en:'Chemical properties'}, sheet:{pt:'Quimicas', en:'Chemical'},
+  groups:[
+   {name:{pt:'Umidade da amostra (opcional)', en:'Sample moisture (optional)'}, fields:[
+     F('Umidade_amostra_pct','Sample_moisture_pct','Umidade da serragem','Sawdust moisture content','%',{hint:{pt:'Converte as massas iniciais (seca ao ar) para base seca',en:'Converts initial (air-dry) masses to oven-dry basis'}})
+   ]},
+   {name:{pt:'Extrativos totais', en:'Total extractives'}, fields:[
+     F('Ext_massa_inicial_g','Ext_initial_mass_g','Massa da amostra','Sample mass','g'),
+     F('Ext_massa_final_g','Ext_final_mass_g','Massa seca após extração','Oven-dry mass after extraction','g')
+   ]},
+   {name:{pt:'Lignina Klason (insolúvel)', en:'Klason (acid-insoluble) lignin'}, fields:[
+     F('Lig_massa_amostra_g','Lig_sample_mass_g','Massa da amostra livre de extrativos','Extractive-free sample mass','g'),
+     F('Lig_massa_residuo_g','Lig_residue_mass_g','Massa seca do resíduo (lignina)','Oven-dry residue (lignin) mass','g'),
+     F('Lig_soluvel_pct','Soluble_lignin_pct','Lignina solúvel (se determinada)','Acid-soluble lignin (if measured)','%',{hint:{pt:'Por UV, base livre de extrativos',en:'By UV, extractive-free basis'}})
+   ]},
+   {name:{pt:'Cinzas', en:'Ash'}, fields:[
+     F('Cz_massa_amostra_g','Ash_sample_mass_g','Massa da amostra','Sample mass','g'),
+     F('Cz_massa_cinzas_g','Ash_mass_g','Massa de cinzas','Ash mass','g')
+   ]}
+  ],
+  out:[
+   {k:'Ext', l:{pt:'Extrativos totais',en:'Total extractives'}, u:'%', d:2},
+   {k:'LigI', l:{pt:'Lignina insolúvel (base livre de extr.)',en:'Insoluble lignin (extractive-free basis)'}, u:'%', d:2},
+   {k:'LigT', l:{pt:'Lignina total (base madeira)',en:'Total lignin (whole-wood basis)'}, u:'%', d:2},
+   {k:'Cz', l:{pt:'Cinzas',en:'Ash'}, u:'%', d:2},
+   {k:'Holo', l:{pt:'Holocelulose (por diferença)',en:'Holocellulose (by difference)'}, u:'%', d:2}
+  ],
+  compute(r){
+    const o={}, w=[];
+    const U = num(r.Umidade_amostra_pct);
+    const dry = m => ok(m) ? (ok(U) ? m/(1+U/100) : m) : NaN;
+    const e0=dry(num(r.Ext_massa_inicial_g)), e1=num(r.Ext_massa_final_g);
+    if (ok(e0)&&ok(e1)&&e0>0) { o.Ext=(e0-e1)/e0*100; if (e1>e0) w.push(tw('Massa após extração maior que a inicial (verifique base seca)','Mass after extraction above initial mass (check oven-dry basis)')); }
+    const l0=dry(num(r.Lig_massa_amostra_g)), l1=num(r.Lig_massa_residuo_g), ls=num(r.Lig_soluvel_pct);
+    if (ok(l0)&&ok(l1)&&l0>0) {
+      o.LigI = l1/l0*100;
+      if (!ok(o.Ext)) w.push(tw('Lignina total sem correção por extrativos (extrativos não informados nesta linha)','Total lignin not corrected for extractives (no extractives in this row)'));
+      o.LigT = (o.LigI + (ok(ls)?ls:0)) * (1-(ok(o.Ext)?o.Ext:0)/100);
+    }
+    const c0=dry(num(r.Cz_massa_amostra_g)), c1=num(r.Cz_massa_cinzas_g);
+    if (ok(c0)&&ok(c1)&&c0>0) o.Cz = c1/c0*100;
+    if (ok(o.Ext)&&ok(o.LigT)) o.Holo = 100 - o.Ext - o.LigT - (ok(o.Cz)?o.Cz:0);
+    if (ok(o.Ext)&&(o.Ext<0||o.Ext>40)) w.push(tw(`Extrativos atípicos: ${fmt(o.Ext)}% (esperado 0–40%)`,`Atypical extractives: ${fmt(o.Ext)}% (expected 0–40%)`));
+    if (ok(o.LigI)&&o.LigI===0) w.push(tw('Lignina igual a zero — provável dado ausente','Lignin equal to zero — probably missing data'));
+    else if (ok(o.LigI)&&(o.LigI<10||o.LigI>50)) w.push(tw(`Lignina atípica: ${fmt(o.LigI)}% (esperado 10–50%)`,`Atypical lignin: ${fmt(o.LigI)}% (expected 10–50%)`));
+    if (ok(o.Cz)&&(o.Cz<0||o.Cz>10)) w.push(tw(`Cinzas atípicas: ${fmt(o.Cz)}% (esperado 0–10%)`,`Atypical ash: ${fmt(o.Cz)}% (expected 0–10%)`));
+    if (ok(o.Holo)&&(o.Holo<40||o.Holo>85)) w.push(tw(`Holocelulose por diferença atípica: ${fmt(o.Holo)}%`,`Atypical holocellulose by difference: ${fmt(o.Holo)}%`));
+    return {o,w};
+  }
+ },
+ mec: {
+  title:{pt:'Propriedades mecânicas', en:'Mechanical properties'}, sheet:{pt:'Mecanicas', en:'Mechanical'},
+  groups:[
+   {name:{pt:'Condição do corpo de prova', en:'Specimen condition'}, fields:[
+     F('Umidade_pct','Moisture_pct','Teor de umidade no ensaio','Moisture content at test','%',{hint:{pt:'Para correção a 12% (ABNT)',en:'For 12% correction (ABNT)'}})
+   ]},
+   {name:{pt:'Flexão estática (3 pontos)', en:'Static bending (3-point)'}, fields:[
+     F('Flex_b_mm','Bend_b_mm','Largura b','Width b','mm'), F('Flex_h_mm','Bend_h_mm','Altura h','Depth h','mm'),
+     F('Flex_vao_mm','Bend_span_mm','Vão L','Span L','mm'), F('Flex_Fmax_N','Bend_Fmax_N','Carga máxima','Maximum load','N'),
+     F('Flex_F1_N','Bend_F1_N','Carga 1 (trecho linear)','Load 1 (linear range)','N',{hint:{pt:'Ex.: 10% de Fmax',en:'E.g. 10% of Fmax'}}), F('Flex_F2_N','Bend_F2_N','Carga 2 (trecho linear)','Load 2 (linear range)','N',{hint:{pt:'Ex.: 50% de Fmax',en:'E.g. 50% of Fmax'}}),
+     F('Flex_d1_mm','Bend_d1_mm','Flecha na carga 1','Deflection at load 1','mm'), F('Flex_d2_mm','Bend_d2_mm','Flecha na carga 2','Deflection at load 2','mm')
+   ]},
+   {name:{pt:'Compressão paralela às fibras', en:'Compression parallel to grain'}, fields:[
+     F('Comp_a_mm','Comp_a_mm','Lado a','Side a','mm'), F('Comp_b_mm','Comp_b_mm','Lado b','Side b','mm'), F('Comp_Fmax_N','Comp_Fmax_N','Carga máxima','Maximum load','N'),
+     F('Comp_F1_N','Comp_F1_N','Carga 1 (opcional, p/ Ec0)','Load 1 (optional, for Ec0)','N'), F('Comp_F2_N','Comp_F2_N','Carga 2 (opcional, p/ Ec0)','Load 2 (optional, for Ec0)','N'),
+     F('Comp_dl1_mm','Comp_dl1_mm','Encurtamento na carga 1','Shortening at load 1','mm'), F('Comp_dl2_mm','Comp_dl2_mm','Encurtamento na carga 2','Shortening at load 2','mm'),
+     F('Comp_L0_mm','Comp_L0_mm','Base de medida L0','Gauge length L0','mm')
+   ]},
+   {name:{pt:'Cisalhamento paralelo às fibras', en:'Shear parallel to grain'}, fields:[
+     F('Cis_b_mm','Shear_b_mm','Largura do plano','Shear plane width','mm'), F('Cis_l_mm','Shear_l_mm','Comprimento do plano','Shear plane length','mm'), F('Cis_Fmax_N','Shear_Fmax_N','Carga máxima','Maximum load','N')
+   ]},
+   {name:{pt:'Dureza Janka (esfera de 11,28 mm, área diametral 1 cm²)', en:'Janka hardness (11.28 mm ball, 1 cm² diametral area)'}, fields:[
+     F('Janka_par_N','Janka_parallel_N','Força — paralela','Load — parallel','N'), F('Janka_perp_N','Janka_normal_N','Força — normal','Load — normal','N')
+   ]}
+  ],
+  out:[
+   {k:'MOR', l:{pt:'MOR (flexão)',en:'MOR (bending)'}, u:'MPa', d:1, strength:true},
+   {k:'MOE', l:{pt:'MOE (flexão)',en:'MOE (bending)'}, u:'MPa', d:0, stiff:true},
+   {k:'fc0', l:{pt:'Resistência compressão paralela fc0',en:'Compression strength parallel fc0'}, u:'MPa', d:1, strength:true},
+   {k:'Ec0', l:{pt:'Módulo compressão paralela Ec0',en:'Compression modulus parallel Ec0'}, u:'MPa', d:0, stiff:true},
+   {k:'fv0', l:{pt:'Resistência ao cisalhamento fv0',en:'Shear strength fv0'}, u:'MPa', d:1, strength:true},
+   {k:'fH0', l:{pt:'Dureza paralela fH0',en:'Hardness parallel fH0'}, u:'MPa', d:1, strength:true},
+   {k:'fH90', l:{pt:'Dureza normal fH90',en:'Hardness normal fH90'}, u:'MPa', d:1, strength:true}
+  ],
+  compute(r){
+    const o={}, w=[];
+    const U=num(r.Umidade_pct);
+    const b=num(r.Flex_b_mm), h=num(r.Flex_h_mm), Ls=num(r.Flex_vao_mm), Fm=num(r.Flex_Fmax_N);
+    if ([b,h,Ls,Fm].every(ok)&&b>0&&h>0) o.MOR = 3*Fm*Ls/(2*b*h*h);
+    const F1=num(r.Flex_F1_N), F2=num(r.Flex_F2_N), d1=num(r.Flex_d1_mm), d2=num(r.Flex_d2_mm);
+    if ([b,h,Ls,F1,F2,d1,d2].every(ok)&&d2!==d1) o.MOE = (F2-F1)*Ls**3/(4*b*h**3*(d2-d1));
+    if (ok(Ls)&&ok(h)&&h>0&&Ls/h<14) w.push(tw(`Relação vão/altura = ${fmt(Ls/h,1)} (baixa; o cisalhamento pode afetar o MOE)`,`Span/depth ratio = ${fmt(Ls/h,1)} (low; shear may affect MOE)`));
+    const a=num(r.Comp_a_mm), bb=num(r.Comp_b_mm), Fc=num(r.Comp_Fmax_N);
+    if ([a,bb,Fc].every(ok)&&a>0&&bb>0) o.fc0 = Fc/(a*bb);
+    const C1=num(r.Comp_F1_N), C2=num(r.Comp_F2_N), l1=num(r.Comp_dl1_mm), l2=num(r.Comp_dl2_mm), L0=num(r.Comp_L0_mm);
+    if ([a,bb,C1,C2,l1,l2,L0].every(ok)&&l2!==l1&&L0>0) o.Ec0 = ((C2-C1)/(a*bb)) / ((l2-l1)/L0);
+    const cb=num(r.Cis_b_mm), cl=num(r.Cis_l_mm), Fv=num(r.Cis_Fmax_N);
+    if ([cb,cl,Fv].every(ok)&&cb>0&&cl>0) o.fv0 = Fv/(cb*cl);
+    const J0=num(r.Janka_par_N), J9=num(r.Janka_perp_N);
+    const Aj = Math.PI*11.284**2/4;
+    if (ok(J0)) o.fH0 = J0/Aj;
+    if (ok(J9)) o.fH90 = J9/Aj;
+    o._U = U;
+    if (state.norm==='ABNT' && state.correct12 && ok(U)) {
+      if (U<10||U>20) w.push(tw(`Umidade de ${fmt(U,1)}% fora do intervalo 10–20% da correção da NBR 7190; valores corrigidos são apenas aproximados`,`Moisture of ${fmt(U,1)}% outside the 10–20% range of the NBR 7190 correction; corrected values are approximate`));
+      for (const d of MOD.mec.out) if (ok(o[d.k])) o[d.k+'_12'] = d.stiff ? o[d.k]*(1+2*(U-12)/100) : o[d.k]*(1+3*(U-12)/100);
+    }
+    const chk = (k, lo, hi, dd, name) => { if (ok(o[k])&&(o[k]<lo||o[k]>hi)) w.push(tw(`${name} atípico: ${fmt(o[k],dd)} MPa (esperado ${fmt(lo,0)}–${fmt(hi,0)})`,`Atypical ${name}: ${fmt(o[k],dd)} MPa (expected ${fmt(lo,0)}–${fmt(hi,0)})`)); };
+    chk('MOR',5,300,1,'MOR'); chk('MOE',2000,40000,0,'MOE'); chk('fc0',5,150,1,'fc0'); chk('fv0',1,40,1,'fv0'); chk('Ec0',2000,45000,0,'Ec0');
+    return {o,w};
+  }
+ }
+};
+const allFields = m => [...ID_FIELDS, ...MOD[m].groups.flatMap(g=>g.fields)];
+
+/* Classes de resistência — folhosas nativas, ABNT NBR 7190-1:2022 */
+const D_CLASSES = [
+  {c:'D60', fc0k:60, fv0k:8, Ec0m:19500, rho:1000},
+  {c:'D50', fc0k:50, fv0k:7, Ec0m:16500, rho:850},
+  {c:'D40', fc0k:40, fv0k:6, Ec0m:14500, rho:750},
+  {c:'D30', fc0k:30, fv0k:5, Ec0m:12000, rho:625},
+  {c:'D20', fc0k:20, fv0k:4, Ec0m:10000, rho:500}
+];
+const DEFAULTS = {
+  ABNT:{Flex_b_mm:50, Flex_h_mm:50, Flex_vao_mm:1050, Comp_a_mm:50, Comp_b_mm:50, Comp_L0_mm:100, Cis_b_mm:50, Cis_l_mm:50},
+  ASTM:{Flex_b_mm:50, Flex_h_mm:50, Flex_vao_mm:710, Comp_a_mm:50, Comp_b_mm:50, Comp_L0_mm:150, Cis_b_mm:50, Cis_l_mm:50}
+};
+
+/* ===================== renderização dos módulos ===================== */
+function fieldHTML(f){
+  const im = f.type==='text' ? '' : 'inputmode="decimal"';
+  return `<label class="f"><b>${esc(L(f.l))}${f.u?` <span class="muted">(${f.u})</span>`:''}</b>
+    <input type="text" ${im} data-k="${f.k}" placeholder="${f.hint?esc(L(f.hint)):''}"></label>`;
+}
+
+function renderModule(m){
+  const M = MOD[m]; const el = $('#view-'+m);
+  const flds = allFields(m);
+  const sheet = L(M.sheet);
+  el.innerHTML = `
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2>${L(M.title)}</h2>
+      <div class="seg" data-mode-seg="${m}"><button data-mode="cp" class="${state.mode[m]==='cp'?'on':''}">${t('mode_cp')}</button><button data-mode="xl" class="${state.mode[m]==='xl'?'on':''}">${t('mode_xl')}</button></div>
+    </div>
+    ${m==='mec'?`<label class="muted" style="margin-top:10px;display:flex;gap:8px;align-items:flex-start"><input style="margin-top:3px" type="checkbox" id="chk12" ${state.correct12?'checked':''}> ${t('corr12')}</label>`:''}
+    <div data-pane="cp" class="${state.mode[m]==='cp'?'':'hide'}">
+      <fieldset><legend>${t('ident')}</legend><div class="grid">${ID_FIELDS.map(fieldHTML).join('')}</div></fieldset>
+      ${M.groups.map(g=>`<fieldset><legend>${esc(L(g.name))}</legend><div class="grid">${g.fields.map(fieldHTML).join('')}</div></fieldset>`).join('')}
+      <div class="row"><button class="btn" data-act="calc">${t('calc')}</button><button class="btn ghost" data-act="clearform">${t('clearform')}</button></div>
+      <div data-preview></div>
+    </div>
+    <div data-pane="xl" class="${state.mode[m]==='xl'?'':'hide'}">
+      <p class="muted">${t('xl_help',{sheet})}</p>
+      <div class="drop" data-drop>${t('drop')}</div>
+      <input type="file" accept=".xlsx,.xls,.csv" class="hide" data-file>
+      <details><summary>${t('cols_expected')} (${flds.length})</summary>
+        <div class="tblwrap"><table><thead><tr><th>${t('col')} (EN)</th><th>${t('col')} (PT)</th><th style="text-align:left">${t('desc')}</th><th>${t('unit')}</th></tr></thead><tbody>
+        ${flds.map(f=>`<tr><td><code>${f.ke}</code></td><td><code>${f.k}</code></td><td style="text-align:left">${esc(L(f.l))}${f.req?' <b>*</b>':''}</td><td>${f.u||''}</td></tr>`).join('')}
+        </tbody></table></div><p class="muted">${t('required')}</p>
+      </details>
+      <div data-xlmsg></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2>${t('results')} <span class="muted" data-count></span></h2>
+      <div class="row"><button class="btn ghost" data-act="export">${t('export')}</button><button class="btn danger" data-act="clear">${t('cleardata')}</button></div>
+    </div>
+    <div data-table></div>
+    <h3>${t('stats_title')}</h3>
+    <div data-stats></div>
+  </div>`;
+  $$('[data-mode-seg] button', el).forEach(b => b.onclick = () => { state.mode[m]=b.dataset.mode; renderModule(m); });
+  const chk = $('#chk12', el); if (chk) chk.onchange = () => { state.correct12 = chk.checked; save(); refreshResults(m); };
+  $('[data-act=calc]', el).onclick = () => calcSingle(m);
+  $('[data-act=clearform]', el).onclick = () => { $$('[data-pane=cp] input', el).forEach(i=>{ if(i.dataset.k!=='Especie') i.value=''; }); prefill(m); };
+  $('[data-act=clear]', el).onclick = () => { if (el._confirm) { state.data[m]=[]; save(); refreshResults(m); el._confirm=false; toast(t('cleared')); } else { el._confirm=true; toast(t('confirm_clear')); setTimeout(()=>el._confirm=false, 4000);} };
+  $('[data-act=export]', el).onclick = () => exportResults(m);
+  const drop = $('[data-drop]', el), file = $('[data-file]', el);
+  drop.onclick = () => file.click();
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add('hover'); };
+  drop.ondragleave = () => drop.classList.remove('hover');
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('hover'); if (e.dataTransfer.files[0]) readFile(m, e.dataTransfer.files[0]); };
+  file.onchange = () => { if (file.files[0]) readFile(m, file.files[0]); file.value=''; };
+  prefill(m);
+  refreshResults(m);
+}
+
+function prefill(m){
+  const d = DEFAULTS[state.norm];
+  $$('#view-'+m+' [data-pane=cp] input').forEach(i => { if (d[i.dataset.k]!==undefined && i.value==='') i.value = String(d[i.dataset.k]); });
+}
+function readForm(m){
+  const r = {};
+  $$('#view-'+m+' [data-pane=cp] input').forEach(i => { if (i.value.trim()!=='') r[i.dataset.k] = i.value.trim(); });
+  return r;
+}
+function calcSingle(m){
+  const r = readForm(m);
+  const box = $('#view-'+m+' [data-preview]');
+  if (!r.Especie) { box.innerHTML = `<div class="err">${t('need_species')}</div>`; return; }
+  const {o,w} = MOD[m].compute(r);
+  const outs = MOD[m].out.filter(d=>ok(o[d.k]));
+  if (!outs.length) { box.innerHTML = `<div class="err">${t('insufficient')}</div>`; return; }
+  if (!r.CP) r.CP = String(state.data[m].filter(x=>x.Especie===r.Especie).length + 1);
+  state.data[m].push(r); save();
+  box.innerHTML = `<div class="res">${outs.map(d=>kpi(d,o)).join('')}</div>` + w.map(x=>`<div class="warn">⚠ ${esc(x)}</div>`).join('') +
+    `<div class="ok">${t('added',{cp:esc(r.CP), sp:esc(r.Especie)})}</div>`;
+  $$('#view-'+m+' [data-pane=cp] input').forEach(i=>{ if(!['Especie','Umidade_pct','Umidade_amostra_pct'].includes(i.dataset.k)) i.value=''; });
+  prefill(m);
+  refreshResults(m);
+}
+function kpi(d,o){
+  const v12 = o[d.k+'_12'];
+  return `<div class="kpi"><div class="l">${esc(L(d.l))}</div><div class="v">${fmt(ok(v12)?v12:o[d.k], d.d)} <small>${d.u}</small></div>
+    ${ok(v12)?`<div class="r">${t('at12',{v:fmt(o[d.k],d.d)})}</div>`:''}</div>`;
+}
+function computeAll(m){ return state.data[m].map(r => ({r, ...MOD[m].compute(r)})); }
+function val(o, d){ const v12 = o[d.k+'_12']; return ok(v12) ? v12 : o[d.k]; }
+
+function refreshResults(m){
+  const el = $('#view-'+m); if (!el.innerHTML) return;
+  const rows = computeAll(m);
+  const outs = MOD[m].out.filter(d => rows.some(x=>ok(x.o[d.k])));
+  $('[data-count]', el).textContent = rows.length ? `(${rows.length})` : '';
+  const corr = m==='mec' && state.norm==='ABNT' && state.correct12;
+  if (!rows.length) { $('[data-table]', el).innerHTML = `<p class="muted">${t('empty')}</p>`; $('[data-stats]', el).innerHTML=''; renderQuality(); return; }
+  $('[data-table]', el).innerHTML = `<div class="tblwrap" style="max-height:380px"><table><thead><tr><th>${t('species')}</th><th>${t('cp')}</th>
+    ${outs.map(d=>`<th>${esc(L(d.l))}${corr&&(d.strength||d.stiff)?' (12%)':''}<br><span class="muted">${d.u}</span></th>`).join('')}<th>${t('alerts')}</th><th></th></tr></thead><tbody>
+    ${rows.map((x,i)=>`<tr><td><i>${esc(x.r.Especie)}</i></td><td>${esc(x.r.CP??'')}</td>${outs.map(d=>`<td>${fmt(val(x.o,d),d.d)}</td>`).join('')}
+      <td class="${x.w.length?'flag':''}" style="text-align:left" title="${esc(x.w.join(' | '))}">${x.w.length?'⚠ '+esc(x.w.join('; ')):'—'}</td>
+      <td><button class="btn ghost" style="padding:2px 8px" data-del="${i}">×</button></td></tr>`).join('')}
+    </tbody></table></div>`;
+  $$('[data-del]', el).forEach(b => b.onclick = () => { state.data[m].splice(+b.dataset.del,1); save(); refreshResults(m); });
+  const st = statsBySpecies(m, rows);
+  $('[data-stats]', el).innerHTML = `<div class="tblwrap"><table><thead><tr><th>${t('species')}</th><th>${t('property')}</th><th>n</th><th>${t('mean')}</th><th>${t('sd')}</th><th>${t('cv')}</th><th>${t('min')}</th><th>${t('max')}</th>${m==='mec'?`<th>${t('charval')}</th>`:''}</tr></thead><tbody>
+    ${st.map(s=>s.props.map((p,j)=>`<tr><td>${j===0?`<i>${esc(s.sp)}</i>`:''}</td><td style="text-align:left">${esc(L(p.d.l))} (${p.d.u||'—'})</td><td>${p.n}</td><td>${fmt(p.m,p.d.d)}</td><td>${fmt(p.s,p.d.d)}</td>
+      <td class="${ok(p.cv)&&p.cv>30?'flag':''}">${fmt(p.cv,1)}</td><td>${fmt(p.min,p.d.d)}</td><td>${fmt(p.max,p.d.d)}</td>
+      ${m==='mec'?`<td>${p.d.strength?`${fmt(p.k.val,p.d.d)} <span class="muted">${esc(p.k.met)}</span>`:'—'}</td>`:''}</tr>`).join('')).join('')}
+    </tbody></table></div>
+    <p class="muted">${t('cv_note')} ${m==='mec'?t('fk_note'):''}</p>`;
+  renderQuality();
+}
+function statsBySpecies(m, rows){
+  rows = rows || computeAll(m);
+  const sps = [...new Set(rows.map(x=>x.r.Especie))];
+  return sps.map(sp => {
+    const rs = rows.filter(x=>x.r.Especie===sp);
+    const props = MOD[m].out.map(d => {
+      const v = rs.map(x=>val(x.o,d)).filter(ok);
+      if (!v.length) return null;
+      const mm=mean(v), s=sd(v);
+      return {d, n:v.length, m:mm, s, cv: ok(s)&&mm? s/mm*100 : NaN, min:Math.min(...v), max:Math.max(...v), k: d.strength ? charValue(v) : null, v};
+    }).filter(Boolean);
+    return {sp, props};
+  });
+}
+
+/* ===================== Excel ===================== */
+function readFile(m, f){
+  const msg = $('#view-'+m+' [data-xlmsg]');
+  if (typeof XLSX === 'undefined') { msg.innerHTML = `<div class="err">${t('xl_nolib')}</div>`; return; }
+  const rd = new FileReader();
+  rd.onload = e => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const names = M => [M.sheet.pt, M.sheet.en].map(normKey);
+      let sh = wb.SheetNames.find(n => names(MOD[m]).includes(normKey(n)));
+      if (!sh) {
+        const other = Object.entries(MOD).find(([k,M]) => k!==m && wb.SheetNames.some(n=>names(M).includes(normKey(n))));
+        if (other) { msg.innerHTML = `<div class="err">${t('xl_wrongsheet',{sheet:L(MOD[m].sheet), mod:L(MOD[other[0]].title)})}</div>`; return; }
+        sh = wb.SheetNames[0];
+      }
+      const aoa = XLSX.utils.sheet_to_json(wb.Sheets[sh], {header:1, defval:'', raw:true});
+      if (aoa.length < 2) { msg.innerHTML = `<div class="err">${t('xl_norows',{sh:esc(sh)})}</div>`; return; }
+      const fields = allFields(m);
+      const map = {}; const unknown = [];
+      aoa[0].forEach((h,i) => { if (String(h).trim()==='') return; const f = fields.find(f=>normKey(f.k)===normKey(h) || normKey(f.ke)===normKey(h)); if (f) map[i]=f.k; else unknown.push(h); });
+      if (!Object.values(map).includes('Especie')) { msg.innerHTML = `<div class="err">${t('xl_nospecies',{sh:esc(sh)})}</div>`; return; }
+      const recognized = Object.values(map).filter(k=>!['Especie','CP'].includes(k));
+      if (!recognized.length) { msg.innerHTML = `<div class="err">${t('xl_nomeas',{ex:EN()?fields[2].ke:fields[2].k})}</div>`; return; }
+      let added=0, skipped=0;
+      for (const line of aoa.slice(1)) {
+        const r = {};
+        for (const [i,k] of Object.entries(map)) { const v=line[i]; if (v!==''&&v!==null&&v!==undefined) r[k]= typeof v==='number'? v : String(v).trim(); }
+        if (!r.Especie) { if (Object.keys(r).length) skipped++; continue; }
+        state.data[m].push(r); added++;
+      }
+      save(); refreshResults(m);
+      msg.innerHTML = `<div class="ok">${t('xl_ok',{n:added, sh:esc(sh)})}${skipped?t('xl_skipped',{n:skipped}):''}</div>` +
+        (unknown.length?`<div class="warn">${t('xl_unknown')} ${unknown.map(u=>`<code>${esc(u)}</code>`).join(', ')}</div>`:'');
+    } catch(err) { msg.innerHTML = `<div class="err">${t('xl_err')} ${esc(err.message)}</div>`; }
+  };
+  rd.readAsArrayBuffer(f);
+}
+
+let downloadsNS = null;
+(async () => { try { if (window.claude && claude.use) downloadsNS = await claude.use('downloads'); } catch(e){} })();
+async function saveFile(filename, wb){
+  if (typeof XLSX === 'undefined') { toast(t('xl_unavail')); return; }
+  const data = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  if (downloadsNS) {
+    try { await downloadsNS.save({filename, data: new Uint8Array(data)}); toast(t('saved')); return; }
+    catch(e){ if (e && e.code==='declined') { toast(t('dl_cancel')); return; } }
+  }
+  try {
+    const blob = new Blob([data], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    toast(t('dl_fallback'));
+  } catch(e){ toast(t('dl_none')); }
+}
+const colKey = f => EN() ? f.ke : f.k;
+
+function templateWorkbook(withExample){
+  const wb = XLSX.utils.book_new();
+  const instr = EN() ? [
+    ['QualiMadeira — spreadsheet template'],[''],
+    ['1. Each sheet matches one app tab: Physical, Chemical, Mechanical (Portuguese names Fisicas, Quimicas, Mecanicas are also accepted).'],
+    ['2. Do not rename the row-1 columns. Columns may stay empty when a test was not done. Portuguese or English column names are both accepted.'],
+    ['3. One row per specimen. "Species" is required; "Specimen" is the specimen ID.'],
+    ['4. Masses in g, volumes in cm³, dimensions in mm, loads in N, contents in %.'],
+    ['5. Oven-dry mass = dried at 103 ± 2 °C to constant mass.'],
+    ['6. Bending and compression: Load 1 and Load 2 must lie in the linear range (e.g. 10% and 50% of maximum load).'],
+    ['7. Import each sheet in the matching tab of the app (Excel sheet mode).'],
+  ] : [
+    ['QualiMadeira — modelo de planilha'],[''],
+    ['1. Cada aba corresponde a um módulo do app: Fisicas, Quimicas, Mecanicas (os nomes em inglês Physical, Chemical, Mechanical também são aceitos).'],
+    ['2. Não altere os nomes das colunas da linha 1. Colunas podem ficar vazias quando o ensaio não foi feito. Nomes em português ou inglês são aceitos.'],
+    ['3. Uma linha por corpo de prova. "Especie" é obrigatória; "CP" é a identificação do corpo de prova.'],
+    ['4. Massas em g, volumes em cm³, dimensões em mm, cargas em N, teores em %.'],
+    ['5. Massa seca = seca em estufa a 103 ± 2 °C até massa constante.'],
+    ['6. Flexão e compressão: Carga 1 e Carga 2 devem estar no trecho linear (ex.: 10% e 50% da carga máxima).'],
+    ['7. Importe cada aba na aba correspondente do app (Planilha Excel).'],
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(instr), t('sheet_instr'));
+  for (const [m,M] of Object.entries(MOD)) {
+    const flds = allFields(m);
+    const cols = flds.map(colKey);
+    const rows = [cols];
+    if (withExample) EXAMPLE[m].forEach(r => rows.push(flds.map(f => r[f.k] ?? '')));
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = cols.map(c=>({wch:Math.max(12,c.length+2)}));
+    XLSX.utils.book_append_sheet(wb, ws, L(M.sheet));
+  }
+  const dict = [EN() ? ['Sheet','Column','Description','Unit','Required','Portuguese column'] : ['Aba','Coluna','Descrição','Unidade','Obrigatória','Coluna em inglês']];
+  for (const [m,M] of Object.entries(MOD)) for (const f of allFields(m)) dict.push([L(M.sheet), colKey(f), L(f.l), f.u||'', f.req?(EN()?'yes':'sim'):'', EN()?f.k:f.ke]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dict), t('sheet_dict'));
+  return wb;
+}
+
+function exportResults(m){
+  if (!state.data[m].length) { toast(t('no_export')); return; }
+  const rows = computeAll(m); const M = MOD[m];
+  const corr = m==='mec' && state.norm==='ABNT' && state.correct12;
+  const head = [t('species'), t('cp'), ...M.out.map(d=>`${L(d.l)} (${d.u||'-'})`), ...(corr?M.out.map(d=>`${L(d.l)} 12% (${d.u})`):[]), t('alerts')];
+  const body = rows.map(x => [x.r.Especie, x.r.CP??'', ...M.out.map(d=>ok(x.o[d.k])?+x.o[d.k].toFixed(4):''), ...(corr?M.out.map(d=>ok(x.o[d.k+'_12'])?+x.o[d.k+'_12'].toFixed(4):''):[]), x.w.join('; ')]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([head,...body]), t('sheet_res'));
+  const st = statsBySpecies(m, rows);
+  const sh = [EN() ? ['Species','Property','Unit','n','Mean','SD','CV_%','Min','Max','Characteristic_value','fk_method'] : ['Especie','Propriedade','Unidade','n','Media','DP','CV_%','Min','Max','Valor_caracteristico','Metodo_fk']];
+  st.forEach(s => s.props.forEach(p => sh.push([s.sp, L(p.d.l), p.d.u, p.n, +p.m.toFixed(4), ok(p.s)?+p.s.toFixed(4):'', ok(p.cv)?+p.cv.toFixed(2):'', +p.min.toFixed(4), +p.max.toFixed(4), p.k&&ok(p.k.val)?+p.k.val.toFixed(4):'', p.k?p.k.met:''])));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sh), t('sheet_stats'));
+  const flds = allFields(m);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([flds.map(colKey), ...state.data[m].map(r=>flds.map(f=>r[f.k]??''))]), L(M.sheet));
+  saveFile(`QualiMadeira_${L(M.sheet)}_${EN()?'results':'resultados'}.xlsx`, wb);
+}
+
+/* ===================== Qualidade ===================== */
+function classDensity(db){
+  if (!ok(db)) return null;
+  if (db <= 0.50) return {t:t('dens_light'), c:'b-a'};
+  if (db <= 0.72) return {t:t('dens_med'), c:'b-w'};
+  return {t:t('dens_heavy'), c:'b-g'};
+}
+function classCA(ca){
+  if (!ok(ca)) return null;
+  if (ca <= 1.5) return {t:t('ca_exc'), c:'b-g'};
+  if (ca <= 2.0) return {t:t('ca_norm'), c:'b-w'};
+  return {t:t('ca_bad'), c:'b-r'};
+}
+function classShrinkV(v){
+  if (!ok(v)) return null;
+  if (v < 10) return {t:t('ev_low'), c:'b-g'};
+  if (v < 15) return {t:t('ev_med'), c:'b-w'};
+  return {t:t('ev_high'), c:'b-a'};
+}
+function strengthClass(fc0k, fv0k, Ec0m){
+  if (!ok(fc0k)) return null;
+  for (const D of D_CLASSES) {
+    if (fc0k >= D.fc0k && (!ok(fv0k) || fv0k >= D.fv0k) && (!ok(Ec0m) || Ec0m >= D.Ec0m)) {
+      const lim = []; if (!ok(fv0k)) lim.push('fv0,k'); if (!ok(Ec0m)) lim.push('Ec0,m');
+      return {c:D.c, note: lim.length ? t('sc_noverif',{x:lim.join(' '+t('and')+' ')}) : t('sc_all')};
+    }
+  }
+  return {c:'< D20', note:t('sc_below')};
+}
+function getStat(stats, sp, k){ const s = stats.find(s=>s.sp===sp); if(!s) return null; return s.props.find(p=>p.d.k===k) || null; }
+
+function renderQuality(){
+  const el = $('#view-qual');
+  const Sx = {fis:statsBySpecies('fis'), qui:statsBySpecies('qui'), mec:statsBySpecies('mec')};
+  const sps = [...new Set([...Sx.fis, ...Sx.qui, ...Sx.mec].map(s=>s.sp))];
+  if (!sps.length) { el.innerHTML = `<div class="card"><h2>${t('q_title')}</h2><p class="muted">${t('q_empty')}</p></div>`; return; }
+  const corr = state.norm==='ABNT' && state.correct12;
+  el.innerHTML = `<div class="card"><h2>${t('q_title')}</h2><p class="muted">${t('q_intro')}</p>
+  ${sps.map(sp => {
+    const g = (m,k) => getStat(Sx[m], sp, k);
+    const Db=g('fis','Db'), CA=g('fis','CA'), eV=g('fis','eV'), Dap=g('fis','Dap12');
+    const Ext=g('qui','Ext'), Lig=g('qui','LigT'), Cz=g('qui','Cz'), Holo=g('qui','Holo');
+    const fc=g('mec','fc0'), fv=g('mec','fv0'), Ec=g('mec','Ec0'), MOE=g('mec','MOE'), MOR=g('mec','MOR'), H=g('mec','fH90');
+    let Ec0m = Ec ? Ec.m : NaN, EcNote = t('ec_meas');
+    if (!ok(Ec0m) && MOE) { Ec0m = MOE.m/0.90; EcNote = t('ec_est'); }
+    const SC = strengthClass(fc?fc.k.val:NaN, fv?fv.k.val:NaN, Ec0m);
+    const dC = classDensity(Db&&Db.m), caC = classCA(CA&&CA.m), vC = classShrinkV(eV&&eV.m);
+    const uses = suggestUses({db:Db&&Db.m, ca:CA&&CA.m, sc:SC&&SC.c, ext:Ext&&Ext.m, lig:Lig&&Lig.m, cz:Cz&&Cz.m});
+    const item = (tt,v,extra='',bar=null) => `<div class="qitem"><div class="t">${tt}</div><div class="v">${v}</div>${extra}${bar!==null?`<div class="bar"><i style="width:${Math.max(3,Math.min(100,bar*100))}%"></i></div>`:''}</div>`;
+    return `<div class="sp"><h3>${esc(sp)}</h3>
+      <div style="margin-bottom:8px">
+        ${SC?`<span class="badge b-g">${t('q_class')} ${SC.c}</span>`:''}${dC?`<span class="badge ${dC.c}">${dC.t}</span>`:''}${caC?`<span class="badge ${caC.c}">${caC.t}</span>`:''}${vC?`<span class="badge ${vC.c}">${vC.t}</span>`:''}
+        ${Ext&&Ext.m>10?`<span class="badge b-w">${t('b_ext')}</span>`:''}${Cz&&Cz.m>1?`<span class="badge b-a">${t('b_ash')}</span>`:''}
+      </div>
+      <div class="qgrid">
+        ${Db?item(t('q_db'), `${fmt(Db.m,3)} g/cm³`, `<div class="muted">n = ${Db.n} · CV ${fmt(Db.cv,1)}%</div>`, Db.m/1.2):''}
+        ${Dap?item(t('q_dap'), `${fmt(Dap.m,3)} g/cm³`):''}
+        ${CA?item(t('q_ca'), fmt(CA.m,2), `<div class="muted">εT ${fmt(g('fis','eT')?.m,1)}% · εR ${fmt(g('fis','eR')?.m,1)}%</div>`):''}
+        ${eV?item(t('q_ev'), `${fmt(eV.m,1)} %`):''}
+        ${SC?item(t('q_sc'), SC.c, `<div class="muted">fc0,k ${fmt(fc.k.val,1)} MPa${fv?` · fv0,k ${fmt(fv.k.val,1)} MPa`:''}${ok(Ec0m)?` · Ec0,m ${fmt(Ec0m,0)} MPa`:''}<br>${SC.note}${ok(Ec0m)?'; '+EcNote:''}${corr?'':'; '+t('no12')}</div>`):''}
+        ${MOR?item(t('q_mor'), `${fmt(MOR.m,1)} MPa`, MOE?`<div class="muted">${t('q_moe')} ${fmt(MOE.m,0)} MPa</div>`:''):''}
+        ${H?item(t('q_janka'), `${fmt(H.m,1)} MPa`, `<div class="muted">≈ ${fmt(H.m*100/1000,2)} kN</div>`):''}
+        ${Ext?item(t('q_ext'), `${fmt(Ext.m,1)} %`):''}
+        ${Lig?item(t('q_lig'), `${fmt(Lig.m,1)} %`):''}
+        ${Cz?item(t('q_cz'), `${fmt(Cz.m,2)} %`):''}
+        ${Holo?item(t('q_holo'), `${fmt(Holo.m,1)} %`):''}
+      </div>
+      ${uses.length?`<h3>${t('q_uses')}</h3><ul class="muted" style="margin:4px 0 0 18px;padding:0">${uses.map(u=>`<li>${u}</li>`).join('')}</ul>`:''}
+    </div>`;
+  }).join('')}
+  </div>`;
+}
+function suggestUses(p){
+  const u = [];
+  const scN = p.sc && p.sc.startsWith('D') ? parseInt(p.sc.slice(1)) : (p.sc ? 0 : NaN);
+  if (ok(scN) && scN >= 40) u.push(t('u_struct',{c:p.sc}));
+  else if (ok(scN) && scN >= 20) u.push(t('u_light',{c:p.sc}));
+  if (ok(p.db) && p.db > 0.72) u.push(t('u_floor'));
+  if (ok(p.db) && p.db > 0.5 && ok(p.ca) && p.ca <= 2.0) u.push(t('u_furn'));
+  if (ok(p.ca) && p.ca > 2.0) u.push(t('u_dry'));
+  if (ok(p.db) && p.db <= 0.5) u.push(t('u_panel'));
+  if (ok(p.db) && p.db >= 0.55 && ok(p.lig) && p.lig >= 25) u.push(t('u_energy'));
+  if (ok(p.lig) && p.lig < 25 && ok(p.ext) && p.ext < 5 && ok(p.db) && p.db >= 0.4 && p.db <= 0.6) u.push(t('u_pulp'));
+  if (ok(p.ext) && p.ext > 10) u.push(t('u_extr'));
+  if (ok(p.cz) && p.cz > 1) u.push(t('u_ash'));
+  return u;
+}
+
+/* ===================== Normas e fórmulas ===================== */
+function renderSobre(){
+  const e = EN();
+  $('#view-sobre').innerHTML = `<div class="card"><h2>${e?'Standards and formulas used':'Normas e fórmulas utilizadas'}</h2>
+  <p class="muted">${e?'All formulas use SI units: N, mm (→ MPa), g and cm³ (→ g/cm³). Consult the current edition of each standard for test procedures, specimen dimensions and conditioning.':'Todas as fórmulas usam unidades SI: N, mm (→ MPa), g e cm³ (→ g/cm³). Consulte a versão vigente das normas para procedimentos de ensaio, dimensões de corpos de prova e condicionamento.'}</p>
+  <h3>${e?'Physical':'Físicas'}</h3>
+  <div class="formula">U (%) = (m<sub>u</sub> − m<sub>s</sub>) / m<sub>s</sub> × 100 &nbsp;— NBR 7190-3; ASTM D4442</div>
+  <div class="formula">ρ<sub>${e?'basic':'bás'}</sub> = m<sub>s</sub> / V<sub>sat</sub> &nbsp;— NBR 11941; ASTM D2395</div>
+  <div class="formula">ρ<sub>12</sub> = m<sub>12</sub> / V<sub>12</sub> &nbsp;·&nbsp; ρ<sub>${e?'oven-dry':'anidra'}</sub> = m<sub>s</sub> / V<sub>s</sub> &nbsp;— NBR 7190-3; ASTM D2395</div>
+  <div class="formula">ε<sub>R,T,L</sub> (%) = (D<sub>sat</sub> − D<sub>${e?'dry':'seca'}</sub>) / D<sub>sat</sub> × 100 &nbsp;— NBR 7190-3; ASTM D143</div>
+  <div class="formula">ε<sub>V</sub> (%) = (V<sub>sat</sub> − V<sub>s</sub>) / V<sub>sat</sub> × 100 ${e?'or':'ou'} 1 − (1−ε<sub>R</sub>)(1−ε<sub>T</sub>)(1−ε<sub>L</sub>)</div>
+  <div class="formula">CA = ε<sub>T</sub> / ε<sub>R</sub> &nbsp;— ${e?'classes: ≤ 1.5 excellent; 1.5–2.0 normal; > 2.0 poor':'classes: ≤ 1,5 excelente; 1,5–2,0 normal; > 2,0 ruim'} (Durlo & Marchiori, 1992)</div>
+  <p class="muted">${e?'Basic density classes (Melo, Coradin & Mendes, 1990): light ≤ 0.50; medium 0.50–0.72; heavy > 0.72 g/cm³.':'Classes de densidade básica (Melo, Coradin & Mendes, 1990): leve ≤ 0,50; média 0,50–0,72; pesada > 0,72 g/cm³.'}</p>
+  <h3>${e?'Chemical':'Químicas'}</h3>
+  <div class="formula">${e?'Extractives':'Extrativos'} (%) = (m<sub>0</sub> − m<sub>1</sub>) / m<sub>0</sub> × 100 &nbsp;— NBR 14853; TAPPI T 204; ASTM D1105</div>
+  <div class="formula">${e?'Insoluble lignin':'Lignina insolúvel'} (%) = m<sub>${e?'residue':'resíduo'}</sub> / m<sub>${e?'extractive-free sample':'amostra livre de extr.'}</sub> × 100 &nbsp;— NBR 7989; TAPPI T 222; ASTM D1106</div>
+  <div class="formula">${e?'Total lignin (whole-wood basis)':'Lignina total (base madeira)'} = (L<sub>ins</sub> + L<sub>sol</sub>) × (1 − Ext/100)</div>
+  <div class="formula">${e?'Ash':'Cinzas'} (%) = m<sub>${e?'ash':'cinzas'}</sub> / m<sub>s</sub> × 100 &nbsp;— NBR 13999; TAPPI T 211; ASTM D1102</div>
+  <div class="formula">${e?'Holocellulose':'Holocelulose'} (%) = 100 − Ext − ${e?'Total lignin − Ash':'Lignina total − Cinzas'} &nbsp;(${e?'by difference':'por diferença'})</div>
+  <p class="muted">${e?'When sawdust moisture is given, initial masses are converted to oven-dry basis':'Se a umidade da serragem for informada, as massas iniciais são convertidas para base seca'}: m<sub>s</sub> = m / (1 + U/100).</p>
+  <h3>${e?'Mechanical':'Mecânicas'}</h3>
+  <div class="formula">MOR = 3·F<sub>max</sub>·L / (2·b·h²) &nbsp;— ${e?'3-point bending':'flexão em 3 pontos'}, NBR 7190-3; ASTM D143</div>
+  <div class="formula">MOE = (F<sub>2</sub> − F<sub>1</sub>)·L³ / [4·b·h³·(δ<sub>2</sub> − δ<sub>1</sub>)] &nbsp;— ${e?'linear range (NBR: 10% and 50% of F<sub>max</sub>)':'trecho linear (NBR: 10% e 50% de F<sub>max</sub>)'}</div>
+  <div class="formula">f<sub>c0</sub> = F<sub>max</sub> / A &nbsp;·&nbsp; E<sub>c0</sub> = (σ<sub>2</sub> − σ<sub>1</sub>) / (ε<sub>2</sub> − ε<sub>1</sub>), ε = Δl / L<sub>0</sub></div>
+  <div class="formula">f<sub>v0</sub> = F<sub>max</sub> / A<sub>${e?'shear':'cisalhamento'}</sub></div>
+  <div class="formula">${e?'Janka hardness':'Dureza Janka'}: f<sub>H</sub> = F / A, A = π·(11,28 mm)²/4 ≈ 100 mm² (1 cm²) &nbsp;— NBR 7190-3; ASTM D143</div>
+  <div class="formula">${e?'12% correction (ABNT)':'Correção a 12% (ABNT)'}: f<sub>12</sub> = f<sub>U</sub>·[1 + 3(U − 12)/100] &nbsp;·&nbsp; E<sub>12</sub> = E<sub>U</sub>·[1 + 2(U − 12)/100], ${e?'valid for':'válida para'} 10% ≤ U ≤ 20%</div>
+  <div class="formula">f<sub>k</sub> = 1,1·[2·(f<sub>1</sub>+…+f<sub>n/2−1</sub>)/(n/2 − 1) − f<sub>n/2</sub>], f<sub>k</sub> ≥ f<sub>1</sub>, f<sub>k</sub> ≥ 0,70·f<sub>m</sub> ${e?'(ascending order; odd n drops the largest)':'(ordem crescente; n ímpar descarta o maior)'}</div>
+  <h3>${e?'Strength classes — native hardwoods (ABNT NBR 7190-1:2022, clear specimens)':'Classes de resistência — folhosas nativas (ABNT NBR 7190-1:2022, CP isentos de defeitos)'}</h3>
+  <div class="tblwrap"><table><thead><tr><th>${t('q_class')}</th><th></th><th>f<sub>c0,k</sub> (MPa)</th><th>f<sub>v0,k</sub> (MPa)</th><th>E<sub>c0,m</sub> (MPa)</th><th>ρ<sub>12%</sub> (kg/m³)</th></tr></thead><tbody>
+  ${[...D_CLASSES].reverse().map(D=>`<tr><td><b>${D.c}</b></td><td></td><td>${D.fc0k}</td><td>${D.fv0k}</td><td>${fmt(D.Ec0m,0)}</td><td>${D.rho}</td></tr>`).join('')}
+  </tbody></table></div>
+  <p class="muted">${e?'The app assigns the highest class whose three requirements (fc0,k, fv0,k, Ec0,m) are met. When Ec0 is not measured, Ec0 ≈ MOE/0.90 is used and flagged.':'O app atribui a maior classe cujos três requisitos (fc0,k, fv0,k, Ec0,m) são atendidos. Quando Ec0 não é medido, usa-se Ec0 ≈ MOE/0,90, indicado no resultado.'}</p>
+  <h3>${e?'Automatic consistency checks':'Alertas automáticos de consistência'}</h3>
+  <p class="muted">${e?'Each specimen is checked for physically implausible values (e.g. basic density outside 0.10–1.40 g/cm³, negative or excessive shrinkage, radial shrinkage above tangential, green mass below dry mass, zero lignin, inconsistent chemical sum). Coefficients of variation above 30% are highlighted in the statistics.':'Cada corpo de prova é verificado quanto a valores fisicamente implausíveis (p. ex. densidade básica fora de 0,10–1,40 g/cm³, retrações negativas ou excessivas, retração radial maior que a tangencial, massa úmida menor que a seca, lignina igual a zero, somatório químico incoerente). Coeficientes de variação acima de 30% são destacados na estatística.'}</p>
+  </div>`;
+}
+
+/* ===================== dados de exemplo (fictícios) ===================== */
+const EXAMPLE = (() => {
+  let seed = 7; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+  const nrm = (m,s) => { let u=0,v=0; while(!u) u=rnd(); while(!v) v=rnd(); return m + s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); };
+  const r2 = (x,d=2) => +x.toFixed(d);
+  const sp = [
+    {n:'Xylofictus exemplaris', db:0.82, eR:4.8, eT:8.1, U:16, mor:150, moe:17500, fc:68, fv:13, j:9000, ext:7, lig:31, cz:0.6},
+    {n:'Lignoides demonstratus', db:0.46, eR:3.1, eT:7.6, U:14, mor:70, moe:9800, fc:33, fv:7, j:2900, ext:3, lig:26, cz:0.4}
+  ];
+  const fis=[], qui=[], mec=[];
+  sp.forEach(s => {
+    for (let i=1;i<=8;i++){
+      const db = nrm(s.db, s.db*0.06), Vsat = r2(nrm(32,1.5)), Ms = r2(db*Vsat), eR=nrm(s.eR,0.4), eT=nrm(s.eT,0.6), eL=Math.abs(nrm(0.3,0.08));
+      const eV = 1-(1-eR/100)*(1-eT/100)*(1-eL/100);
+      fis.push({Especie:s.n, CP:i, Massa_inicial_g:r2(Ms*nrm(1.75,0.08)), Massa_seca_g:Ms, Volume_saturado_cm3:Vsat, Volume_seco_cm3:r2(Vsat*(1-eV)),
+        Radial_sat_mm:20, Radial_seca_mm:r2(20*(1-eR/100)), Tang_sat_mm:20, Tang_seca_mm:r2(20*(1-eT/100)), Long_sat_mm:50, Long_seca_mm:r2(50*(1-eL/100))});
+      const U = r2(nrm(s.U,0.8),1);
+      const b=50,h=50,Ls=1050, mor=nrm(s.mor, s.mor*0.1), Fm=mor*2*b*h*h/(3*Ls);
+      const moe=nrm(s.moe, s.moe*0.08), F1=0.1*Fm, F2=0.5*Fm, d1=r2(F1*Ls**3/(4*b*h**3*moe),3), d2=r2(F2*Ls**3/(4*b*h**3*moe),3);
+      const fc=nrm(s.fc,s.fc*0.09), Ec=moe/0.9*nrm(1,0.04), Fc=fc*2500, C1=0.1*Fc, C2=0.5*Fc;
+      mec.push({Especie:s.n, CP:i, Umidade_pct:U, Flex_b_mm:b, Flex_h_mm:h, Flex_vao_mm:Ls, Flex_Fmax_N:Math.round(Fm), Flex_F1_N:Math.round(F1), Flex_F2_N:Math.round(F2), Flex_d1_mm:d1, Flex_d2_mm:d2,
+        Comp_a_mm:50, Comp_b_mm:50, Comp_Fmax_N:Math.round(Fc), Comp_F1_N:Math.round(C1), Comp_F2_N:Math.round(C2), Comp_dl1_mm:r2(C1/2500/Ec*100,4), Comp_dl2_mm:r2(C2/2500/Ec*100,4), Comp_L0_mm:100,
+        Cis_b_mm:50, Cis_l_mm:50, Cis_Fmax_N:Math.round(nrm(s.fv,s.fv*0.1)*2500), Janka_par_N:Math.round(nrm(s.j*1.1,s.j*0.08)), Janka_perp_N:Math.round(nrm(s.j,s.j*0.08))});
+      if (i<=4) {
+        const ext=nrm(s.ext,0.6), lig=nrm(s.lig/(1-s.ext/100),1), cz=Math.abs(nrm(s.cz,0.08));
+        qui.push({Especie:s.n, CP:i, Ext_massa_inicial_g:2, Ext_massa_final_g:r2(2*(1-ext/100),4), Lig_massa_amostra_g:1, Lig_massa_residuo_g:r2(lig/100,4),
+          Cz_massa_amostra_g:2, Cz_massa_cinzas_g:r2(2*cz/100,4)});
+      }
+    }
+  });
+  return {fis, qui, mec};
+})();
+const EXAMPLE_NAMES = ['Xylofictus exemplaris','Lignoides demonstratus','Espécie A (exemplo)','Espécie B (exemplo)'];
+
+/* ===================== navegação, idioma e inicialização ===================== */
+const TABS = ['fis','qui','mec','qual','sobre'];
+function showTab(tb){
+  state.tab = tb;
+  $$('#tabs button').forEach(b=>b.classList.toggle('on', b.dataset.t===tb));
+  TABS.forEach(k => $('#view-'+k).classList.toggle('hide', k!==tb));
+  if (tb !== location.hash.slice(1)) history.replaceState(null,'','#'+tb);
+  window.scrollTo({top:0});
+}
+$$('#tabs button').forEach(b => b.onclick = () => showTab(b.dataset.t));
+window.addEventListener('hashchange', () => { const h=location.hash.slice(1); if (TABS.includes(h)) showTab(h); });
+
+function renderAll(){
+  document.documentElement.lang = EN() ? 'en-US' : 'pt-BR';
+  document.title = EN() ? 'QualiMadeira — Wood Quality' : 'QualiMadeira — Qualidade da Madeira';
+  $$('[data-i]').forEach(el => el.textContent = t(el.dataset.i));
+  $$('#langSeg button').forEach(b=>b.classList.toggle('on', b.dataset.l===LANG));
+  $$('#normSeg button').forEach(b=>b.classList.toggle('on', b.dataset.n===state.norm));
+  $('#normNote').textContent = t('norm_'+state.norm);
+  renderSobre();
+  ['fis','qui','mec'].forEach(renderModule);
+}
+$$('#langSeg button').forEach(b => b.onclick = () => { LANG = b.dataset.l; try { localStorage.setItem('qm_lang', LANG); } catch(e){} renderAll(); });
+$$('#normSeg button').forEach(b => b.onclick = () => { state.norm = b.dataset.n; save(); renderAll(); });
+$('#btnTemplate').onclick = () => { if (typeof XLSX==='undefined') { toast(t('xl_unavail')); return; } saveFile(EN()?'QualiMadeira_template.xlsx':'QualiMadeira_modelo.xlsx', templateWorkbook(false)); };
+$('#btnExample').onclick = () => {
+  for (const m of ['fis','qui','mec']) state.data[m] = state.data[m].filter(r=>!EXAMPLE_NAMES.includes(String(r.Especie))).concat(EXAMPLE[m].map(r=>({...r})));
+  save(); ['fis','qui','mec'].forEach(refreshResults); toast(t('example_loaded'));
+};
+
+renderAll();
+const h0 = location.hash.slice(1); showTab(TABS.includes(h0)?h0:'fis');
+</script>
+</body>
+</html>
