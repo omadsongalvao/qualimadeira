@@ -8,7 +8,8 @@ authors:
   - family-names: "Galvão"
     given-names: "Madson Lucas"
     affiliation: "Universidade Federal do Pará (UFPA), Bragança, Brazil"
-    # orcid: "https://orcid.org/0000-0000-0000-0000"
+    orcid: "https://orcid.org/0000-0001-7927-3762"
+    email: "omadsongalvao@outlook.com"
 repository-code: "https://github.com/omadsongalvao/qualimadeira"
 keywords:
   - wood technology
