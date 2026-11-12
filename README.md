@@ -61,7 +61,7 @@ Quality classes and end-use suggestions are screening aids, not a technical repo
 
 ### How to cite
 
-See [`CITATION.cff`](CITATION.cff). Article: *in preparation for SoftwareX*.
+See [`CITATION.cff`](CITATION.cff). Article: *submitted to the Journal of the Indian Academy of Wood Science*.
 
 ### License
 
